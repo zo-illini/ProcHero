@@ -6,6 +6,9 @@
 #include "GameFramework/Pawn.h"
 #include "Math/UnrealMathUtility.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Components/SplineComponent.h"
+#include "Components/SceneComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "HeroPart.generated.h"
 
 UCLASS()
@@ -27,6 +30,18 @@ protected:
 	void FollowSource();
 
 	void MoveToTargetSimple(FVector VTarget, FRotator RTarget, float DeltaTime, float speed);
+
+	void MoveToTargetSpline(float DeltaTime, float speed);
+
+	void SampleSpline(float DeltaTime, float speed);
+
+	int MaxSplineSampleNum;
+
+	int SplineSampleNum;
+
+	TArray<FVector> SplineSamples;
+
+	bool HasSampledSpline;
 
 public:	
 	// Called every frame
@@ -66,6 +81,14 @@ public:
 		FRotator MoveToTargetRotator;
 
 	UPROPERTY(VisibleAnywhere)
-		float Timer;
+		float MoveToTimer;
 
+	UPROPERTY(VisibleAnywhere)
+		USplineComponent* SplineComponent;
+
+	UPROPERTY(EditAnywhere)
+		float SplineMoveSpeed;
+
+	UPROPERTY(VisibleAnywhere)
+		int SplineMoveCounter;
 };

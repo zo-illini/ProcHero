@@ -34,9 +34,6 @@ void AHeroControl::BeginPlay()
 			(Cast<AHeroPart>(AllHeroParts[i]))->SetMoveToTarget(TargetedLocations[i], GetActorRotation());
 		}
 	}
-	
-
-
 }
 
 // Called every frame

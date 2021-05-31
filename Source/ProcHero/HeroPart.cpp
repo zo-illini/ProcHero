@@ -9,6 +9,11 @@ AHeroPart::AHeroPart()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	if (!SplineComponent)
+	{
+		SplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("Spline"));
+		SplineComponent->SetupAttachment(RootComponent);
+	}
 }
 
 // Called when the game starts or when spawned
@@ -24,8 +29,12 @@ void AHeroPart::BeginPlay()
 	}
 
 	isMovingToTarget = true;
-
-
+	isFollowing = true;
+	MaxSplineSampleNum = 1000;
+	for (int i = 0; i < MaxSplineSampleNum; i++)
+	{
+		SplineSamples.Add(FVector(0, 0, 0));
+	}
 }
 
 // Called every frame
@@ -34,9 +43,11 @@ void AHeroPart::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	if (isMovingToTarget) 
 	{
-		MoveToTargetSimple(MoveToTargetLocation, MoveToTargetRotator, DeltaTime, 1);
+		//MoveToTargetSimple(MoveToTargetLocation, MoveToTargetRotator, DeltaTime, 1);
+		MoveToTargetSpline(DeltaTime, SplineMoveSpeed);
+
 	}
-	else 
+	else if (isFollowing)
 	{
 		FollowSource();
 	}
@@ -73,7 +84,7 @@ void AHeroPart::SetMoveToTarget(FVector VTarget, FRotator RTarget)
 	MoveToTargetRotator = RTarget;
 	MoveToStartLocation = this->GetActorLocation();
 	MoveToStartRotation = this->GetActorRotation();
-	Timer = 0;
+	MoveToTimer = 0;
 	isMovingToTarget = true;
 }
 
@@ -81,9 +92,9 @@ void AHeroPart::MoveToTargetSimple(FVector VTarget, FRotator RTarget, float Delt
 {
 	if (isMovingToTarget) 
 	{
-		FVector cur = UKismetMathLibrary::VInterpTo(MoveToStartLocation, VTarget, Timer, speed);
+		FVector cur = UKismetMathLibrary::VInterpTo(MoveToStartLocation, VTarget, MoveToTimer, speed);
 		this->SetActorLocation(cur);
-		this->SetActorRotation(UKismetMathLibrary::RInterpTo(MoveToStartRotation, RTarget, Timer, speed));
+		this->SetActorRotation(UKismetMathLibrary::RInterpTo(MoveToStartRotation, RTarget, MoveToTimer, speed));
 
 		if ((cur - VTarget).Size() < 1)
 		{
@@ -92,6 +103,55 @@ void AHeroPart::MoveToTargetSimple(FVector VTarget, FRotator RTarget, float Delt
 			OriginalDistance = (Source->GetActorLocation() - GetActorLocation()).Size();
 		}
 
-		Timer += DeltaTime;
+		MoveToTimer += DeltaTime;
 	}
+}
+
+void AHeroPart::MoveToTargetSpline(float DeltaTime, float speed) 
+{
+	if (!HasSampledSpline) 
+	{
+		SampleSpline(DeltaTime, speed);
+	}
+	
+	if (MoveToTimer < SplineSampleNum) 
+	{
+		SetActorLocation(SplineSamples[MoveToTimer]);
+		MoveToTimer++;
+	}
+	else if (MoveToTimer == SplineSampleNum) 
+	{
+		isMovingToTarget = false;
+		MoveToTimer++;
+		OriginalDistance = (Source->GetActorLocation() - GetActorLocation()).Size();
+	}
+}
+
+/*
+	A utility function that creates the sampled points on spline SplineComponent.
+	Each sampled points is seperated by step = DeltaTime x speed
+	When sampling is done, HasSampled is set to true and the results are stored in SplineSamples
+*/
+
+void AHeroPart::SampleSpline(float DeltaTime, float speed) 
+{
+	check(SplineComponent);
+
+	// adding Delta to avoid divided-by-zero
+	float step = DeltaTime * speed + DELTA;
+
+	SplineSampleNum = (int)(SplineComponent->GetSplineLength() / step);
+
+	if (SplineSampleNum > MaxSplineSampleNum) 
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Spline sampling speed is too small. Endpoint might not be reached"));
+		SplineSampleNum = MaxSplineSampleNum;
+	}
+
+	for (int i = 0; i < SplineSampleNum; i++)
+	{
+		SplineSamples[i] = SplineComponent->GetLocationAtDistanceAlongSpline(i * step, ESplineCoordinateSpace::World);
+	}
+		
+	HasSampledSpline = true;
 }
