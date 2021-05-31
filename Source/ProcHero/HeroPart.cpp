@@ -16,11 +16,11 @@ void AHeroPart::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	isValid = (SourceCube != nullptr);
+	isValid = (Source != nullptr);
 
 	if (isValid)
 	{
-		OriginalDistance = (SourceCube->GetActorLocation() - GetActorLocation()).Size();
+		OriginalDistance = (Source->GetActorLocation() - GetActorLocation()).Size();
 	}
 
 	isMovingToTarget = true;
@@ -32,13 +32,13 @@ void AHeroPart::BeginPlay()
 void AHeroPart::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (isFollowing) 
+	if (isMovingToTarget) 
+	{
+		MoveToTargetSimple(MoveToTargetLocation, MoveToTargetRotator, DeltaTime, 1);
+	}
+	else 
 	{
 		FollowSource();
-	}
-	else
-	{
-		MoveToTarget(MoveToTargetLocation, MoveToTargetRotator, DeltaTime, 2);
 	}
 }
 
@@ -53,13 +53,13 @@ void AHeroPart::FollowSource()
 {
 	if (isValid)
 	{
-		FVector TargetedLocation = SourceCube->GetActorRotation().Vector() * (-OriginalDistance) + SourceCube->GetActorLocation();
+		FVector TargetedLocation = Source->GetActorRotation().Vector() * (-OriginalDistance) + Source->GetActorLocation();
 		this->SetActorLocation((FMath::Lerp<FVector, float>(GetActorLocation(), TargetedLocation, DampingTranslationWeight)));
 
-		FRotator MyRotation = GetActorRotation();
-		FRotator TargetedRotation = UKismetMathLibrary::MakeRotFromX((SourceCube->GetActorLocation() - GetActorLocation()).GetSafeNormal());
+		FRotator TargetedRotation = UKismetMathLibrary::MakeRotFromX((Source->GetActorLocation() - GetActorLocation()).GetSafeNormal());
 
 		// Rotation is not interpolated for now
+		//FRotator MyRotation = GetActorRotation();
 		//TargetedRotation = UKismetMathLibrary::RInterpTo(MyRotation, TargetedRotation, DeltaTime, 10);
 
 
@@ -67,18 +67,31 @@ void AHeroPart::FollowSource()
 	}
 }
 
-void AHeroPart::MoveToTarget(FVector VTarget, FRotator RTarget, float DeltaTime, float speed) 
+void AHeroPart::SetMoveToTarget(FVector VTarget, FRotator RTarget) 
+{
+	MoveToTargetLocation = VTarget;
+	MoveToTargetRotator = RTarget;
+	MoveToStartLocation = this->GetActorLocation();
+	MoveToStartRotation = this->GetActorRotation();
+	Timer = 0;
+	isMovingToTarget = true;
+}
+
+void AHeroPart::MoveToTargetSimple(FVector VTarget, FRotator RTarget, float DeltaTime, float speed) 
 {
 	if (isMovingToTarget) 
 	{
-		FVector cur = UKismetMathLibrary::VInterpTo(this->GetActorLocation(), VTarget, DeltaTime, speed);
+		FVector cur = UKismetMathLibrary::VInterpTo(MoveToStartLocation, VTarget, Timer, speed);
 		this->SetActorLocation(cur);
-		this->SetActorRotation(UKismetMathLibrary::RInterpTo(this->GetActorRotation(), RTarget, DeltaTime, speed));
+		this->SetActorRotation(UKismetMathLibrary::RInterpTo(MoveToStartRotation, RTarget, Timer, speed));
 
 		if ((cur - VTarget).Size() < 1)
 		{
 			this->SetActorLocation(VTarget);
 			isMovingToTarget = false;
+			OriginalDistance = (Source->GetActorLocation() - GetActorLocation()).Size();
 		}
+
+		Timer += DeltaTime;
 	}
 }

@@ -17,13 +17,16 @@ public:
 	// Sets default values for this pawn's properties
 	AHeroPart();
 
+	void SetMoveToTarget(FVector VTarget, FRotator RTarget);
+
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	void FollowSource();
 
-	void MoveToTarget(FVector VTarget, FRotator RTarget, float DeltaTime, float speed);
+	void MoveToTargetSimple(FVector VTarget, FRotator RTarget, float DeltaTime, float speed);
 
 public:	
 	// Called every frame
@@ -39,7 +42,7 @@ public:
 		bool isFollowing;
 
 	UPROPERTY(EditAnywhere)
-		AActor* SourceCube;
+		AActor* Source;
 
 	UPROPERTY(VisibleAnywhere)
 		float OriginalDistance;
@@ -50,10 +53,19 @@ public:
 	UPROPERTY(EditAnywhere)
 		bool isMovingToTarget;
 
+	UPROPERTY(VisibleAnywhere)
+		FVector MoveToStartLocation;
+
+	UPROPERTY(VisibleAnywhere)
+		FRotator MoveToStartRotation;
+
 	UPROPERTY(EditAnywhere)
 		FVector MoveToTargetLocation;
 
 	UPROPERTY(EditAnywhere)
 		FRotator MoveToTargetRotator;
+
+	UPROPERTY(VisibleAnywhere)
+		float Timer;
 
 };
