@@ -26,14 +26,7 @@ void AHeroControl::BeginPlay()
 	InitializeTargetedLocations();
 	InitializeSources();
 
-	if (AllPartsValid) 
-	{
-		check(AllHeroParts.Num() == TargetedLocations.Num());
-		for (int i = 0; i < AllHeroParts.Num(); i++) 
-		{
-			(Cast<AHeroPart>(AllHeroParts[i]))->SetMoveToTarget(TargetedLocations[i], GetActorRotation());
-		}
-	}
+	StartMovingAllParts();
 }
 
 // Called every frame
@@ -69,6 +62,18 @@ void AHeroControl::InitializeSources()
 	for (int i = 1; i < AllHeroParts.Num(); i++) 
 	{
 		(Cast<AHeroPart>(AllHeroParts[i]))->Source = AllHeroParts[i - 1];
+	}
+}
+
+void AHeroControl::StartMovingAllParts() 
+{
+	if (AllPartsValid)
+	{
+		check(AllHeroParts.Num() == TargetedLocations.Num());
+		for (int i = 0; i < AllHeroParts.Num(); i++)
+		{
+			(Cast<AHeroPart>(AllHeroParts[i]))->SetMoveToTarget(TargetedLocations[i], GetActorRotation(), true);
+		}
 	}
 }
 

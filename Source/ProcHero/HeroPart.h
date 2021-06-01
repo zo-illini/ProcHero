@@ -20,7 +20,7 @@ public:
 	// Sets default values for this pawn's properties
 	AHeroPart();
 
-	void SetMoveToTarget(FVector VTarget, FRotator RTarget);
+	void SetMoveToTarget(FVector VTarget, FRotator RTarget, bool usingSplineMove);
 
 
 protected:
@@ -33,7 +33,9 @@ protected:
 
 	void MoveToTargetSpline(float DeltaTime, float speed);
 
-	void SampleSpline(float DeltaTime, float speed);
+	void SampleSpline(USplineComponent * Spline, float DeltaTime, float speed);
+
+	void RandomizeSpline(USplineComponent* Spline, float RangeRatio);
 
 	int MaxSplineSampleNum;
 

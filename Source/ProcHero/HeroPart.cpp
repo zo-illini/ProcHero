@@ -21,9 +21,9 @@ void AHeroPart::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	isValid = (Source != nullptr);
-	isMovingToTarget = true;
+	//isMovingToTarget = false;
 	isFollowing = false;
+
 	MaxSplineSampleNum = 1000;
 	for (int i = 0; i < MaxSplineSampleNum; i++)
 	{
@@ -40,7 +40,7 @@ void AHeroPart::Tick(float DeltaTime)
 		//MoveToTargetSimple(MoveToTargetLocation, MoveToTargetRotator, DeltaTime, 1);
 		if (!HasSampledSpline)
 		{
-			SampleSpline(DeltaTime, SplineMoveSpeed);
+			SampleSpline(SplineComponent, DeltaTime, SplineMoveSpeed);
 		}
 		else 
 		{
@@ -96,13 +96,20 @@ void AHeroPart::FollowSource()
 	this->SetActorRotation(TargetedRotation);
 }
 
-void AHeroPart::SetMoveToTarget(FVector VTarget, FRotator RTarget) 
+void AHeroPart::SetMoveToTarget(FVector VTarget, FRotator RTarget, bool UsingSplineMove) 
 {
 	MoveToTargetLocation = VTarget;
 	MoveToTargetRotator = RTarget;
 	MoveToStartLocation = this->GetActorLocation();
 	MoveToStartRotation = this->GetActorRotation();
 	MoveToTimer = 0;
+
+	if (UsingSplineMove) 
+	{
+		SplineComponent->SetLocationAtSplinePoint(2, MoveToTargetLocation, ESplineCoordinateSpace::World, true);
+		RandomizeSpline(SplineComponent, 0.5f);
+	}
+
 	isMovingToTarget = true;
 }
 
@@ -144,14 +151,14 @@ void AHeroPart::MoveToTargetSpline(float DeltaTime, float speed)
 	When sampling is done, HasSampled is set to true and the results are stored in SplineSamples
 */
 
-void AHeroPart::SampleSpline(float DeltaTime, float speed) 
+void AHeroPart::SampleSpline(USplineComponent * Spline, float DeltaTime, float speed) 
 {
-	check(SplineComponent);
+	check(Spline);
 
 	// adding Delta to avoid divided-by-zero
 	float step = DeltaTime * speed + DELTA;
 
-	SplineSampleNum = (int)(SplineComponent->GetSplineLength() / step);
+	SplineSampleNum = (int)(Spline->GetSplineLength() / step);
 
 	if (SplineSampleNum > MaxSplineSampleNum) 
 	{
@@ -161,8 +168,27 @@ void AHeroPart::SampleSpline(float DeltaTime, float speed)
 
 	for (int i = 0; i < SplineSampleNum; i++)
 	{
-		SplineSamples[i] = SplineComponent->GetLocationAtDistanceAlongSpline(i * step, ESplineCoordinateSpace::World);
+		SplineSamples[i] = Spline->GetLocationAtDistanceAlongSpline(i * step, ESplineCoordinateSpace::World);
 	}
 		
 	HasSampledSpline = true;
+}
+
+void AHeroPart::RandomizeSpline(USplineComponent* Spline, float RangeRatio) 
+{
+	if (Spline->GetNumberOfSplinePoints() != 3) 
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Number of spline points not equal to 3"));
+		return;
+	}
+	
+	ESplineCoordinateSpace::Type space = ESplineCoordinateSpace::World;
+
+
+	FVector Center = (Spline->GetLocationAtSplinePoint(0, space) + Spline->GetLocationAtSplinePoint(2, space)) / 2;
+	float MaxRadius = RangeRatio * (Spline->GetLocationAtSplinePoint(3, space) - Spline->GetLocationAtSplinePoint(0, space)).Size();
+	FVector Target = Center + FMath::VRand() * (FMath::RandRange(0, 1) * MaxRadius);
+
+	Spline->SetLocationAtSplinePoint(1, Target, space, true);
+
 }
