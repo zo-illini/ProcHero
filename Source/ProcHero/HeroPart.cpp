@@ -29,6 +29,9 @@ void AHeroPart::BeginPlay()
 	{
 		SplineSamples.Add(FVector(0, 0, 0));
 	}
+
+	// Calculated the constant gravity scale that achieves equilibrium on the boundary
+	//ConstantGravityScale = GravityScale / (ConstantGravityBoundary * ConstantGravityBoundary);
 }
 
 // Called every frame
@@ -38,14 +41,17 @@ void AHeroPart::Tick(float DeltaTime)
 	if (isMovingToTarget) 
 	{
 		//MoveToTargetSimple(MoveToTargetLocation, MoveToTargetRotator, DeltaTime, 1);
-		if (!HasSampledSpline)
+
+		/*if (!HasSampledSpline)
 		{
 			SampleSpline(SplineComponent, DeltaTime, SplineMoveSpeed);
 		}
 		else 
 		{
 			MoveToTargetSpline(DeltaTime, SplineMoveSpeed);
-		}
+		}*/
+
+		MoveToTargetGravity(DeltaTime);
 
 	}
 	else 
@@ -194,5 +200,48 @@ void AHeroPart::RandomizeSpline(USplineComponent* Spline, float RangeRatio)
 	FVector Target = Center + FMath::VRand() * (FMath::RandRange(0, 1) * MaxRadius);
 
 	Spline->SetLocationAtSplinePoint(1, Target, space, true);
+
+}
+
+/*
+	Simulate gravational force for object
+	Outside ConstantGravityBoundary, force is constant
+	Inside the boundary, force is scaled with square of distance toward target.
+	On the boundary, the two type of force are equal.
+*/
+
+void AHeroPart::MoveToTargetGravity(float DeltaTime) 
+{
+	FVector VToTarget = MoveToTargetLocation - GetActorLocation();
+	float Distance = (VToTarget).Size();
+
+	if (Distance < DELTA * 100) 
+	{
+		SetActorLocation(MoveToTargetLocation);
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Reached"));
+		isMovingToTarget = false;
+		return;
+	}
+
+	FVector Gravity;
+	if (Distance < ConstantGravityBoundary)
+	{
+		Gravity = GravityScale / (Distance * Distance) * VToTarget.GetSafeNormal();
+	}
+	else 
+	{
+		Gravity = ConstantGravityScale * VToTarget.GetSafeNormal();
+	}
+
+	// Update Velocity
+	Velocity += Gravity * DeltaTime;
+	// Update Position and Clamp to avoid overshotting
+	FVector Delta = Velocity * DeltaTime;
+	Delta = Delta.GetSafeNormal() * FMath::Clamp<float>(Delta.Size(), 0, VToTarget.Size());
+	SetActorLocation(GetActorLocation() + Delta);
+
+	// Simply lerp toward target rotation by distance
+	FVector TotalDistance = MoveToTargetLocation - MoveToStartLocation;
+	SetActorRotation(FMath::RInterpTo(MoveToStartRotation, MoveToTargetRotator, 1 - Distance / TotalDistance.Size(), 1));
 
 }

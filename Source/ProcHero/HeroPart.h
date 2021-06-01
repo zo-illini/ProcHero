@@ -37,6 +37,8 @@ protected:
 
 	void RandomizeSpline(USplineComponent* Spline, float RangeRatio);
 
+	void MoveToTargetGravity(float DeltaTime);
+
 	int MaxSplineSampleNum;
 
 	int SplineSampleNum;
@@ -46,6 +48,7 @@ protected:
 	TArray<FVector> SplineSamples;
 
 	bool HasSampledSpline;
+
 
 public:	
 	// Called every frame
@@ -95,4 +98,16 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 		int SplineMoveCounter;
+
+	UPROPERTY(EditAnywhere)
+		float GravityScale;
+
+	UPROPERTY(VisibleAnywhere)
+		FVector Velocity;
+
+	UPROPERTY(EditAnywhere)
+		float ConstantGravityBoundary;
+
+	UPROPERTY(EditAnywhere)
+		float ConstantGravityScale;
 };
