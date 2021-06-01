@@ -40,6 +40,8 @@ void AHeroPart::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	if (isMovingToTarget) 
 	{
+		MoveToTarget(DeltaTime);
+
 		//MoveToTargetSimple(MoveToTargetLocation, MoveToTargetRotator, DeltaTime, 1);
 
 		/*if (!HasSampledSpline)
@@ -51,7 +53,7 @@ void AHeroPart::Tick(float DeltaTime)
 			MoveToTargetSpline(DeltaTime, SplineMoveSpeed);
 		}*/
 
-		MoveToTargetGravity(DeltaTime);
+		//MoveToTargetGravity(DeltaTime);
 
 	}
 	else 
@@ -102,15 +104,16 @@ void AHeroPart::FollowSource()
 	this->SetActorRotation(TargetedRotation);
 }
 
-void AHeroPart::SetMoveToTarget(FVector VTarget, FRotator RTarget, bool UsingSplineMove) 
+void AHeroPart::SetMoveToTarget(FVector VTarget, FRotator RTarget, int Mode) 
 {
 	MoveToTargetLocation = VTarget;
 	MoveToTargetRotator = RTarget;
 	MoveToStartLocation = this->GetActorLocation();
 	MoveToStartRotation = this->GetActorRotation();
 	MoveToTimer = 0;
+	MoveMode = Mode;
 
-	if (UsingSplineMove) 
+	if (Mode == 1) 
 	{
 		SplineComponent->SetLocationAtSplinePoint(2, MoveToTargetLocation, ESplineCoordinateSpace::World, true);
 		RandomizeSpline(SplineComponent, 0.5f);
@@ -119,6 +122,30 @@ void AHeroPart::SetMoveToTarget(FVector VTarget, FRotator RTarget, bool UsingSpl
 
 	isMovingToTarget = true;
 }
+
+void AHeroPart::MoveToTarget(float DeltaTime) 
+{
+	switch (MoveMode) 
+	{
+	case 0:
+		MoveToTargetSimple(MoveToTargetLocation, MoveToTargetRotator, DeltaTime, 1);
+		break;
+	case 1:
+		if (!HasSampledSpline)
+		{
+			SampleSpline(SplineComponent, DeltaTime, SplineMoveSpeed);
+		}
+		else
+		{
+			MoveToTargetSpline(DeltaTime, SplineMoveSpeed);
+		}
+		break;
+	case 2:
+		MoveToTargetGravity(DeltaTime);
+		break;
+	}
+}
+
 
 void AHeroPart::MoveToTargetSimple(FVector VTarget, FRotator RTarget, float DeltaTime, float speed) 
 {
@@ -218,7 +245,6 @@ void AHeroPart::MoveToTargetGravity(float DeltaTime)
 	if (Distance < DELTA * 100) 
 	{
 		SetActorLocation(MoveToTargetLocation);
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Reached"));
 		isMovingToTarget = false;
 		return;
 	}

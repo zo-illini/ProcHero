@@ -20,7 +20,7 @@ public:
 	// Sets default values for this pawn's properties
 	AHeroPart();
 
-	void SetMoveToTarget(FVector VTarget, FRotator RTarget, bool usingSplineMove);
+	void SetMoveToTarget(FVector VTarget, FRotator RTarget, int MoveMode);
 
 
 protected:
@@ -28,6 +28,8 @@ protected:
 	virtual void BeginPlay() override;
 
 	void FollowSource();
+
+	void MoveToTarget(float DeltaTime);
 
 	void MoveToTargetSimple(FVector VTarget, FRotator RTarget, float DeltaTime, float speed);
 
@@ -86,6 +88,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 		FRotator MoveToTargetRotator;
+
+	UPROPERTY(EditAnywhere)
+		int MoveMode;
 
 	UPROPERTY(VisibleAnywhere)
 		float MoveToTimer;

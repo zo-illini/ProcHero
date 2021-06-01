@@ -73,6 +73,7 @@ void AHeroControl::StartMovingAllParts()
 		for (int i = 0; i < AllHeroParts.Num(); i++)
 		{
 			(Cast<AHeroPart>(AllHeroParts[i]))->SetMoveToTarget(TargetedLocations[i], GetActorRotation(), true);
+			(Cast<AHeroPart>(AllHeroParts[i]))->MoveMode = 2;
 		}
 	}
 }
