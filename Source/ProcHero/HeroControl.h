@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "HeroPart.h"
+#include "Components/InputComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "HeroControl.generated.h"
 
 UCLASS()
@@ -26,6 +28,8 @@ protected:
 
 	void StartMovingAllParts();
 
+	void TryEnableInput();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -42,5 +46,23 @@ public:
 	UPROPERTY(EditAnywhere)
 		TArray<FVector> TargetedLocations;
 
+	void MoveForward(float AxisValue);
+	void MoveBackward(float AxisValue);
+	void MoveSide(float AxisValue);
+
+	UPROPERTY(EditAnywhere)
+		float ForwardVelocity;
+	UPROPERTY(EditAnywhere)
+		float BackwardVelocity;
+	UPROPERTY(EditAnywhere)
+		float TurnVelocity;
+
+	UPROPERTY(VisibleAnywhere)
+		FVector CurrentVelocity;
+	UPROPERTY(VisibleAnywhere)
+		float DeltaAngle;
+
+	UPROPERTY(VisibleAnywhere)
+		bool Possessed;
 
 };

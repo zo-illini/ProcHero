@@ -119,6 +119,10 @@ void AHeroPart::SetMoveToTarget(FVector VTarget, FRotator RTarget, int Mode)
 		RandomizeSpline(SplineComponent, 0.5f);
 		SplineSamplePtr = 0;
 	}
+	else if (Mode == 2) 
+	{
+		//Velocity = GetActorRotation().Vector() * 100;
+	}
 
 	isMovingToTarget = true;
 }
@@ -242,7 +246,7 @@ void AHeroPart::MoveToTargetGravity(float DeltaTime)
 	FVector VToTarget = MoveToTargetLocation - GetActorLocation();
 	float Distance = (VToTarget).Size();
 
-	if (Distance < DELTA * 100) 
+	if (Distance < 1) 
 	{
 		SetActorLocation(MoveToTargetLocation);
 		isMovingToTarget = false;
@@ -269,5 +273,4 @@ void AHeroPart::MoveToTargetGravity(float DeltaTime)
 	// Simply lerp toward target rotation by distance
 	FVector TotalDistance = MoveToTargetLocation - MoveToStartLocation;
 	SetActorRotation(FMath::RInterpTo(MoveToStartRotation, MoveToTargetRotator, 1 - Distance / TotalDistance.Size(), 1));
-
 }
