@@ -41,6 +41,8 @@ protected:
 
 	int SplineSampleNum;
 
+	int SplineSamplePtr;
+
 	TArray<FVector> SplineSamples;
 
 	bool HasSampledSpline;

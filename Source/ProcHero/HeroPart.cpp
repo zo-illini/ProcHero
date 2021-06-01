@@ -108,6 +108,7 @@ void AHeroPart::SetMoveToTarget(FVector VTarget, FRotator RTarget, bool UsingSpl
 	{
 		SplineComponent->SetLocationAtSplinePoint(2, MoveToTargetLocation, ESplineCoordinateSpace::World, true);
 		RandomizeSpline(SplineComponent, 0.5f);
+		SplineSamplePtr = 0;
 	}
 
 	isMovingToTarget = true;
@@ -133,15 +134,18 @@ void AHeroPart::MoveToTargetSimple(FVector VTarget, FRotator RTarget, float Delt
 
 void AHeroPart::MoveToTargetSpline(float DeltaTime, float speed) 
 {
-	if (MoveToTimer < SplineSampleNum) 
+	if (SplineSamplePtr < SplineSampleNum) 
 	{
-		SetActorLocation(SplineSamples[MoveToTimer]);
-		MoveToTimer++;
+		SetActorLocation(SplineSamples[SplineSamplePtr]);
+		// This makes sure rotation is done when the object reaches the last spline sample point
+		this->SetActorRotation(UKismetMathLibrary::RInterpTo(MoveToStartRotation, MoveToTargetRotator, (float)SplineSamplePtr / SplineSampleNum, 1));
+		MoveToTimer += DeltaTime;
+		SplineSamplePtr++;
 	}
-	else if (MoveToTimer == SplineSampleNum) 
+	else if (SplineSamplePtr == SplineSampleNum)
 	{
 		isMovingToTarget = false;
-		MoveToTimer++;
+		SplineSamplePtr++;
 	}
 }
 
