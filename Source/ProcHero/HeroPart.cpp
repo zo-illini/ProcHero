@@ -22,14 +22,8 @@ void AHeroPart::BeginPlay()
 	Super::BeginPlay();
 	
 	isValid = (Source != nullptr);
-
-	if (isValid)
-	{
-		OriginalDistance = (Source->GetActorLocation() - GetActorLocation()).Size();
-	}
-
 	isMovingToTarget = true;
-	isFollowing = true;
+	isFollowing = false;
 	MaxSplineSampleNum = 1000;
 	for (int i = 0; i < MaxSplineSampleNum; i++)
 	{
@@ -44,12 +38,37 @@ void AHeroPart::Tick(float DeltaTime)
 	if (isMovingToTarget) 
 	{
 		//MoveToTargetSimple(MoveToTargetLocation, MoveToTargetRotator, DeltaTime, 1);
-		MoveToTargetSpline(DeltaTime, SplineMoveSpeed);
+		if (!HasSampledSpline)
+		{
+			SampleSpline(DeltaTime, SplineMoveSpeed);
+		}
+		else 
+		{
+			MoveToTargetSpline(DeltaTime, SplineMoveSpeed);
+		}
 
 	}
-	else if (isFollowing)
+	else 
 	{
-		FollowSource();
+		if (isFollowing)
+		{
+			FollowSource();
+		}
+		else 
+		{
+			// Make sure source is in position before switching to the following mode
+			AHeroPart* ptr = Cast<AHeroPart>(Source);
+			if (ptr && !ptr->isMovingToTarget) 
+			{
+				OriginalDistance = (Source->GetActorLocation() - GetActorLocation()).Size();
+				isFollowing = true;
+			}
+			else if (ptr == nullptr) //First hero part, source is hero control
+			{
+				OriginalDistance = (Source->GetActorLocation() - GetActorLocation()).Size();
+				isFollowing = true;
+			}
+		}
 	}
 }
 
@@ -62,20 +81,19 @@ void AHeroPart::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AHeroPart::FollowSource() 
 {
-	if (isValid)
-	{
-		FVector TargetedLocation = Source->GetActorRotation().Vector() * (-OriginalDistance) + Source->GetActorLocation();
-		this->SetActorLocation((FMath::Lerp<FVector, float>(GetActorLocation(), TargetedLocation, DampingTranslationWeight)));
+	check(Source);
 
-		FRotator TargetedRotation = UKismetMathLibrary::MakeRotFromX((Source->GetActorLocation() - GetActorLocation()).GetSafeNormal());
+	FVector TargetedLocation = Source->GetActorRotation().Vector() * (-OriginalDistance) + Source->GetActorLocation();
+	this->SetActorLocation((FMath::Lerp<FVector, float>(GetActorLocation(), TargetedLocation, DampingTranslationWeight)));
 
-		// Rotation is not interpolated for now
-		//FRotator MyRotation = GetActorRotation();
-		//TargetedRotation = UKismetMathLibrary::RInterpTo(MyRotation, TargetedRotation, DeltaTime, 10);
+	FRotator TargetedRotation = UKismetMathLibrary::MakeRotFromX((Source->GetActorLocation() - GetActorLocation()).GetSafeNormal());
+
+	// Rotation is not interpolated for now
+	//FRotator MyRotation = GetActorRotation();
+	//TargetedRotation = UKismetMathLibrary::RInterpTo(MyRotation, TargetedRotation, DeltaTime, 10);
 
 
-		this->SetActorRotation(TargetedRotation);
-	}
+	this->SetActorRotation(TargetedRotation);
 }
 
 void AHeroPart::SetMoveToTarget(FVector VTarget, FRotator RTarget) 
@@ -100,7 +118,6 @@ void AHeroPart::MoveToTargetSimple(FVector VTarget, FRotator RTarget, float Delt
 		{
 			this->SetActorLocation(VTarget);
 			isMovingToTarget = false;
-			OriginalDistance = (Source->GetActorLocation() - GetActorLocation()).Size();
 		}
 
 		MoveToTimer += DeltaTime;
@@ -109,11 +126,6 @@ void AHeroPart::MoveToTargetSimple(FVector VTarget, FRotator RTarget, float Delt
 
 void AHeroPart::MoveToTargetSpline(float DeltaTime, float speed) 
 {
-	if (!HasSampledSpline) 
-	{
-		SampleSpline(DeltaTime, speed);
-	}
-	
 	if (MoveToTimer < SplineSampleNum) 
 	{
 		SetActorLocation(SplineSamples[MoveToTimer]);
@@ -123,7 +135,6 @@ void AHeroPart::MoveToTargetSpline(float DeltaTime, float speed)
 	{
 		isMovingToTarget = false;
 		MoveToTimer++;
-		OriginalDistance = (Source->GetActorLocation() - GetActorLocation()).Size();
 	}
 }
 
