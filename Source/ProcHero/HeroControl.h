@@ -49,6 +49,7 @@ public:
 	void MoveForward(float AxisValue);
 	void MoveBackward(float AxisValue);
 	void MoveSide(float AxisValue);
+	void Transform();
 
 	UPROPERTY(EditAnywhere)
 		float ForwardVelocity;

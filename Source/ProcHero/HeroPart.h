@@ -9,7 +9,12 @@
 #include "Components/SplineComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SphereComponent.h"
 #include "HeroPart.generated.h"
+
+
+UENUM()
+	enum class Status {Idle, Transforming, WaitToFollow, Following};
 
 UCLASS()
 class PROCHERO_API AHeroPart : public APawn
@@ -41,6 +46,8 @@ protected:
 
 	void MoveToTargetGravity(float DeltaTime);
 
+	void TryStartFollowing();
+
 	int MaxSplineSampleNum;
 
 	int SplineSampleNum;
@@ -60,7 +67,18 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UPROPERTY(VisibleAnywhere)
+		USphereComponent* SphereComponent;
+
+	UPROPERTY(VisibleAnywhere)
+		USplineComponent* SplineComponent;
+
+	UPROPERTY(VisibleAnywhere)
+		UCapsuleComponent* CapsuleComponent;
+
+	UPROPERTY(VisibleAnywhere)
 		bool isValid;
+	UPROPERTY(VisibleAnywhere)
+		Status MyStatus;
 
 	UPROPERTY(VisibleAnywhere)
 		bool isFollowing;
@@ -94,9 +112,6 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 		float MoveToTimer;
-
-	UPROPERTY(VisibleAnywhere)
-		USplineComponent* SplineComponent;
 
 	UPROPERTY(EditAnywhere)
 		float SplineMoveSpeed;

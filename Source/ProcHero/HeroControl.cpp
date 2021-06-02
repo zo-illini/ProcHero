@@ -26,7 +26,10 @@ void AHeroControl::BeginPlay()
 	InitializeTargetedLocations();
 	InitializeSources();
 
-	StartMovingAllParts();
+	//StartMovingAllParts();
+
+	UGameplayStatics::GetPlayerController(GetWorld(), 0)->Possess(this);
+	Possessed = true;
 }
 
 // Called every frame
@@ -57,6 +60,7 @@ void AHeroControl::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	InputComponent->BindAxis("Move_Forward", this, &AHeroControl::MoveForward);
 	//InputComponent->BindAxis("Move_Backward", this, &AHeroControl::MoveBackward);
 	InputComponent->BindAxis("Move_Side", this, &AHeroControl::MoveSide);
+	InputComponent->BindAction("Transform",  IE_Pressed, this, &AHeroControl::Transform);
 }
 
 void AHeroControl::InitializeTargetedLocations() 
@@ -83,12 +87,13 @@ void AHeroControl::InitializeSources()
 
 void AHeroControl::StartMovingAllParts() 
 {
+
 	if (AllPartsValid)
 	{
 		check(AllHeroParts.Num() == TargetedLocations.Num());
 		for (int i = 0; i < AllHeroParts.Num(); i++)
 		{
-			(Cast<AHeroPart>(AllHeroParts[i]))->SetMoveToTarget(TargetedLocations[i], GetActorRotation(), 2);
+			(Cast<AHeroPart>(AllHeroParts[i]))->SetMoveToTarget(TargetedLocations[i], GetActorRotation(), 1);
 		}
 	}
 }
@@ -125,4 +130,9 @@ void AHeroControl::MoveForward(float AxisValue)
 void AHeroControl::MoveSide(float AxisValue) 
 {
 	DeltaAngle = AxisValue * TurnVelocity;
+}
+
+void AHeroControl::Transform() 
+{
+	StartMovingAllParts();
 }

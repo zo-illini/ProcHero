@@ -9,11 +9,23 @@ AHeroPart::AHeroPart()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	if (!SphereComponent) 
+	{
+		SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere"));
+		RootComponent = SphereComponent;
+	}
 	if (!SplineComponent)
 	{
 		SplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("Spline"));
 		SplineComponent->SetupAttachment(RootComponent);
 	}
+	if (!CapsuleComponent) 
+	{
+		CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Capsule"));
+		CapsuleComponent->SetupAttachment(RootComponent);
+	}
+	MyStatus = Status::Idle;
+
 }
 
 // Called when the game starts or when spawned
@@ -22,7 +34,7 @@ void AHeroPart::BeginPlay()
 	Super::BeginPlay();
 	
 	//isMovingToTarget = false;
-	isFollowing = false;
+	//isFollowing = false;
 
 	MaxSplineSampleNum = 1000;
 	for (int i = 0; i < MaxSplineSampleNum; i++)
@@ -38,45 +50,17 @@ void AHeroPart::BeginPlay()
 void AHeroPart::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (isMovingToTarget) 
+	if (MyStatus == Status::Transforming) 
 	{
 		MoveToTarget(DeltaTime);
-
-		//MoveToTargetSimple(MoveToTargetLocation, MoveToTargetRotator, DeltaTime, 1);
-
-		/*if (!HasSampledSpline)
-		{
-			SampleSpline(SplineComponent, DeltaTime, SplineMoveSpeed);
-		}
-		else 
-		{
-			MoveToTargetSpline(DeltaTime, SplineMoveSpeed);
-		}*/
-
-		//MoveToTargetGravity(DeltaTime);
-
 	}
-	else 
+	else if (MyStatus == Status::Following)
 	{
-		if (isFollowing)
-		{
-			FollowSource();
-		}
-		else 
-		{
-			// Make sure source is in position before switching to the following mode
-			AHeroPart* ptr = Cast<AHeroPart>(Source);
-			if (ptr && !ptr->isMovingToTarget) 
-			{
-				OriginalDistance = (Source->GetActorLocation() - GetActorLocation()).Size();
-				isFollowing = true;
-			}
-			else if (ptr == nullptr) //First hero part, source is hero control
-			{
-				OriginalDistance = (Source->GetActorLocation() - GetActorLocation()).Size();
-				isFollowing = true;
-			}
-		}
+		FollowSource();
+	}
+	else if (MyStatus == Status::WaitToFollow) 
+	{
+		TryStartFollowing();
 	}
 }
 
@@ -85,6 +69,22 @@ void AHeroPart::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+}
+
+void AHeroPart::TryStartFollowing() 
+{
+	check(Source);
+	AHeroPart* ptr = Cast<AHeroPart>(Source);
+	if (ptr && ptr->MyStatus == Status::Following)
+	{
+		OriginalDistance = (Source->GetActorLocation() - GetActorLocation()).Size();
+		MyStatus = Status::Following;
+	}
+	else if (ptr == nullptr) //First hero part, source is hero control
+	{
+		OriginalDistance = (Source->GetActorLocation() - GetActorLocation()).Size();
+		MyStatus = Status::Following;
+	}
 }
 
 void AHeroPart::FollowSource() 
@@ -124,7 +124,9 @@ void AHeroPart::SetMoveToTarget(FVector VTarget, FRotator RTarget, int Mode)
 		//Velocity = GetActorRotation().Vector() * 100;
 	}
 
-	isMovingToTarget = true;
+	MyStatus = Status::Transforming;
+
+	SphereComponent->SetSimulatePhysics(false);
 }
 
 void AHeroPart::MoveToTarget(float DeltaTime) 
@@ -162,7 +164,7 @@ void AHeroPart::MoveToTargetSimple(FVector VTarget, FRotator RTarget, float Delt
 		if ((cur - VTarget).Size() < 1)
 		{
 			this->SetActorLocation(VTarget);
-			isMovingToTarget = false;
+			MyStatus = Status::WaitToFollow;
 		}
 
 		MoveToTimer += DeltaTime;
@@ -181,7 +183,7 @@ void AHeroPart::MoveToTargetSpline(float DeltaTime, float speed)
 	}
 	else if (SplineSamplePtr == SplineSampleNum)
 	{
-		isMovingToTarget = false;
+		MyStatus = Status::WaitToFollow;
 		SplineSamplePtr++;
 	}
 }
@@ -249,7 +251,7 @@ void AHeroPart::MoveToTargetGravity(float DeltaTime)
 	if (Distance < 1) 
 	{
 		SetActorLocation(MoveToTargetLocation);
-		isMovingToTarget = false;
+		MyStatus = Status::WaitToFollow;
 		return;
 	}
 
