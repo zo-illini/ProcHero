@@ -81,7 +81,7 @@ void AHeroPart::TryStartFollowing()
 	{
 		OriginalDistance = (Source->GetActorLocation() - GetActorLocation()).Size();
 		MyStatus = Status::Following;
-		SphereComponent->SetSimulatePhysics(true);
+		//SphereComponent->SetSimulatePhysics(true);
 	}
 }
 

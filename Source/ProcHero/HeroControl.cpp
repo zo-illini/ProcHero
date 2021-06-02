@@ -30,6 +30,8 @@ void AHeroControl::BeginPlay()
 
 	UGameplayStatics::GetPlayerController(GetWorld(), 0)->Possess(this);
 	Possessed = true;
+
+	SnakeMoveDirection = 1;
 }
 
 // Called every frame
@@ -48,6 +50,11 @@ void AHeroControl::Tick(float DeltaTime)
 	{
 		FRotator NewRotation = FRotator(0, DeltaAngle * DeltaTime, 0) + GetActorRotation();
 		SetActorRotation(NewRotation);
+	}
+
+	if (IsSnakeMoving) 
+	{
+		SnakeMove(DeltaTime);
 	}
 	
 }
@@ -135,4 +142,19 @@ void AHeroControl::MoveSide(float AxisValue)
 void AHeroControl::Transform() 
 {
 	StartMovingAllParts();
+}
+
+void AHeroControl::SnakeMove(float DeltaTime) 
+{
+	FRotator CurRot = GetActorRotation();
+	if (CurRot.Yaw > SnakeMoveAngle) 
+	{
+		SnakeMoveDirection = -1;
+	}
+	else if (CurRot.Yaw < -1 * SnakeMoveAngle)
+	{
+		SnakeMoveDirection = 1;
+	}
+	
+	SetActorRotation(CurRot + FRotator(0, SnakeMoveDirection * SnakeMoveSpeed * DeltaTime, 0));
 }

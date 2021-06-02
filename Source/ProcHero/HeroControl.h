@@ -30,6 +30,8 @@ protected:
 
 	void TryEnableInput();
 
+	void SnakeMove(float DeltaTime);
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -65,5 +67,17 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 		bool Possessed;
+
+	UPROPERTY(EditAnywhere)
+		bool IsSnakeMoving;
+
+	UPROPERTY(EditAnywhere)
+		float SnakeMoveAngle;
+
+	UPROPERTY(VisibleAnywhere)
+		int SnakeMoveDirection;
+
+	UPROPERTY(EditAnywhere)
+		float SnakeMoveSpeed;
 
 };
