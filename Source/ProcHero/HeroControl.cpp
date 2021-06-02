@@ -52,7 +52,13 @@ void AHeroControl::Tick(float DeltaTime)
 		SetActorRotation(NewRotation);
 	}
 
-	if (IsSnakeMoving) 
+	// Stop snake movement when turning or staying still
+	if (DeltaAngle != 0 || CurrentVelocity.Size() == 0) 
+	{
+		IsSnakeMoving = false;
+	}
+
+	if (CanSnakeMove && IsSnakeMoving) 
 	{
 		SnakeMove(DeltaTime);
 	}
@@ -132,6 +138,14 @@ void AHeroControl::MoveForward(float AxisValue)
 	{
 		CurrentVelocity = GetActorRotation().Vector() * AxisValue * BackwardVelocity;
 	}
+
+	if (AxisValue != 0) 
+	{
+		if (!IsSnakeMoving) 
+		{
+			StartSnakeMove();
+		}
+	}
 }
 
 void AHeroControl::MoveSide(float AxisValue) 
@@ -144,17 +158,24 @@ void AHeroControl::Transform()
 	StartMovingAllParts();
 }
 
+void AHeroControl::StartSnakeMove() 
+{
+	IsSnakeMoving = true;
+	SnakeMoveStartAngle = GetActorRotation().Yaw;
+	SnakeMoveTimer = 0;
+}
+
 void AHeroControl::SnakeMove(float DeltaTime) 
 {
 	FRotator CurRot = GetActorRotation();
-	if (CurRot.Yaw > SnakeMoveAngle) 
+	if (SnakeMoveTimer > SnakeMoveTime) 
 	{
 		SnakeMoveDirection = -1;
 	}
-	else if (CurRot.Yaw < -1 * SnakeMoveAngle)
+	else if (SnakeMoveTimer < -SnakeMoveTime)
 	{
 		SnakeMoveDirection = 1;
 	}
-	
+	SnakeMoveTimer += SnakeMoveDirection * DeltaTime;
 	SetActorRotation(CurRot + FRotator(0, SnakeMoveDirection * SnakeMoveSpeed * DeltaTime, 0));
 }

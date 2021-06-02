@@ -30,7 +30,10 @@ protected:
 
 	void TryEnableInput();
 
+	void StartSnakeMove();
+
 	void SnakeMove(float DeltaTime);
+
 
 public:	
 	// Called every frame
@@ -69,10 +72,21 @@ public:
 		bool Possessed;
 
 	UPROPERTY(EditAnywhere)
+		bool CanSnakeMove;
+
+	UPROPERTY(EditAnywhere)
 		bool IsSnakeMoving;
+
+	UPROPERTY(VisibleAnywhere)
+		float SnakeMoveTimer;
+	UPROPERTY(EditAnywhere)
+		float SnakeMoveTime;
 
 	UPROPERTY(EditAnywhere)
 		float SnakeMoveAngle;
+
+	UPROPERTY(VisibleAnywhere)
+		float SnakeMoveStartAngle;
 
 	UPROPERTY(VisibleAnywhere)
 		int SnakeMoveDirection;
