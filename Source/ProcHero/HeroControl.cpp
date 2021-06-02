@@ -66,8 +66,8 @@ void AHeroControl::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 void AHeroControl::InitializeTargetedLocations() 
 {
 	// 简单的初始化排成一条长蛇的TargetedLocations
-	FVector Offset = GetActorRotation().Vector() * -120;
-	FVector Target = this->GetActorLocation() + Offset/1.5;
+	FVector Offset = GetActorRotation().Vector() * -60;
+	FVector Target = this->GetActorLocation() + Offset;
 	for (int i = 0; i < AllHeroParts.Num(); i++) 
 	{
 		TargetedLocations.Add(Target);
@@ -93,7 +93,7 @@ void AHeroControl::StartMovingAllParts()
 		check(AllHeroParts.Num() == TargetedLocations.Num());
 		for (int i = 0; i < AllHeroParts.Num(); i++)
 		{
-			(Cast<AHeroPart>(AllHeroParts[i]))->SetMoveToTarget(TargetedLocations[i], GetActorRotation(), 1);
+			(Cast<AHeroPart>(AllHeroParts[i]))->SetMoveToTarget(TargetedLocations[i], GetActorRotation(), 2);
 		}
 	}
 }

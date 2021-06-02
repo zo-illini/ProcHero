@@ -24,6 +24,8 @@ AHeroPart::AHeroPart()
 		CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Capsule"));
 		CapsuleComponent->SetupAttachment(RootComponent);
 	}
+
+	CapsuleComponent->SetRelativeScale3D(FVector(0.5, 0.5, 0.5));
 	MyStatus = Status::Idle;
 
 }
@@ -75,15 +77,11 @@ void AHeroPart::TryStartFollowing()
 {
 	check(Source);
 	AHeroPart* ptr = Cast<AHeroPart>(Source);
-	if (ptr && ptr->MyStatus == Status::Following)
+	if ((ptr && ptr->MyStatus == Status::Following) || ptr == nullptr) //First hero part, source is hero control
 	{
 		OriginalDistance = (Source->GetActorLocation() - GetActorLocation()).Size();
 		MyStatus = Status::Following;
-	}
-	else if (ptr == nullptr) //First hero part, source is hero control
-	{
-		OriginalDistance = (Source->GetActorLocation() - GetActorLocation()).Size();
-		MyStatus = Status::Following;
+		SphereComponent->SetSimulatePhysics(true);
 	}
 }
 
