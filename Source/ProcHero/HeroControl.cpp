@@ -76,17 +76,35 @@ void AHeroControl::Tick(float DeltaTime)
 	{
 		SetActorLocation(GetActorLocation() + CurrentVelocity * DeltaTime);
 	}
-
-	if (Possessed)
+	if (Possessed && !IsSnakeMoving) 
 	{
-		FRotator NewRotation = FRotator(0, DeltaAngle * DeltaTime, 0) + GetActorRotation();
-		SetActorRotation(NewRotation);
+		float NewYaw, TargetYaw = SpringArmComponent->GetRelativeRotation().Yaw;
+		float DeltaYaw = TargetYaw - GetActorRotation().Yaw;
+		if (FMath::Abs(DeltaYaw) > 0.001) 
+		{
+			NewYaw = FMath::FInterpTo(GetActorRotation().Yaw, SpringArmComponent->GetRelativeRotation().Yaw, DeltaTime, TurnVelocity);
+		}
+		else 
+		{
+			NewYaw = TargetYaw;
+			StartSnakeMove(DeltaYaw);
+		}
+		SetActorRotation(FRotator(0, NewYaw, 0));
+
 	}
 
+
+	/*if (Possessed)
+	{
+		FRotator NewRotation = FRotator(0, DeltaAngle, 0) + GetActorRotation();
+		SetActorRotation(NewRotation);
+	}*/
+
 	// Stop snake movement when turning or staying still
-	if (DeltaAngle != 0 || CurrentVelocity.Size() == 0) 
+	if (FMath::Abs(DeltaAngle) > 0.01 || CurrentVelocity.Size() == 0) 
 	{
 		IsSnakeMoving = false;
+		//StopSnakeMovingAtTurn = true;
 	}
 
 	if (CanSnakeMove && IsSnakeMoving) 
@@ -172,18 +190,15 @@ void AHeroControl::MoveForward(float AxisValue)
 		CurrentVelocity = GetActorRotation().Vector() * AxisValue * BackwardVelocity;
 	}
 
-	if (AxisValue != 0) 
+	if (AxisValue == 0) 
 	{
-		if (!IsSnakeMoving) 
-		{
-			StartSnakeMove();
-		}
+		IsSnakeMoving = false;
 	}
 }
 
 void AHeroControl::MoveSide(float AxisValue) 
 {
-	DeltaAngle = AxisValue * TurnVelocity;
+	//DeltaAngle = AxisValue * TurnVelocity;
 }
 
 void AHeroControl::Transform() 
@@ -191,17 +206,21 @@ void AHeroControl::Transform()
 	StartMovingAllParts();
 }
 
-void AHeroControl::StartSnakeMove() 
+void AHeroControl::StartSnakeMove(float direction) 
 {
 	IsSnakeMoving = true;
 	SnakeMoveStartAngle = GetActorRotation().Yaw;
 	SnakeMoveTimer = 0;
+	SnakeMoveDirection = FMath::Sign(direction);
+	// Also start snake-moving right when this function is called with direction 0
+	if (SnakeMoveDirection == 0)
+		SnakeMoveDirection = 1;
 }
 
 void AHeroControl::SnakeMove(float DeltaTime) 
 {
 	FRotator CurRot = GetActorRotation();
-	if (SnakeMoveTimer > SnakeMoveTime) 
+	if (SnakeMoveTimer > SnakeMoveTime)
 	{
 		SnakeMoveDirection = -1;
 	}
@@ -209,6 +228,14 @@ void AHeroControl::SnakeMove(float DeltaTime)
 	{
 		SnakeMoveDirection = 1;
 	}
+	//else if (FMath::Abs(SnakeMoveTimer) < 0.05)
+	//{
+	//	if (StopSnakeMovingAtTurn) 
+	//	{
+	//		IsSnakeMoving = false;
+	//		StopSnakeMovingAtTurn = false;
+	//	}
+	//}
 	SnakeMoveTimer += SnakeMoveDirection * DeltaTime;
 	SetActorRotation(CurRot + FRotator(0, SnakeMoveDirection * SnakeMoveSpeed * DeltaTime, 0));
 }
@@ -219,5 +246,5 @@ void AHeroControl::MoveCameraWithMouse(float DeltaTime)
 	PlayerController->GetInputMouseDelta(MouseX, MouseY);
 	FRotator CameraRot = SpringArmComponent->GetRelativeRotation() + FRotator(0, MouseX * DeltaTime * CameraRotSpeed, 0);
 	SpringArmComponent->SetRelativeRotation(CameraRot);
-	
+	DeltaAngle = MouseX * DeltaTime;
 }

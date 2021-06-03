@@ -32,7 +32,7 @@ protected:
 
 	void TryEnableInput();
 
-	void StartSnakeMove();
+	void StartSnakeMove(float direction);
 
 	void SnakeMove(float DeltaTime);
 
@@ -98,6 +98,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 		bool IsSnakeMoving;
+	
+	UPROPERTY(EditAnywhere)
+		bool StopSnakeMovingAtTurn;
 
 	UPROPERTY(VisibleAnywhere)
 		float SnakeMoveTimer;
