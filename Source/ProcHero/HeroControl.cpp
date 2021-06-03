@@ -9,6 +9,36 @@ AHeroControl::AHeroControl()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	if (!SphereComponent)
+	{
+		SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereRoot"));
+		RootComponent = SphereComponent;
+	}
+	if (!MeshComponent) 
+	{
+		MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+		static ConstructorHelpers::FObjectFinder<UStaticMesh>Mesh(TEXT("StaticMesh'/Game/StarterContent/Shapes/Shape_Sphere.Shape_Sphere'"));
+		if (Mesh.Succeeded()) 
+		{
+			MeshComponent->SetStaticMesh(Mesh.Object);
+		}
+		MeshComponent->SetupAttachment(RootComponent);
+	}
+	if (!SpringArmComponent) 
+	{
+		SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
+		SpringArmComponent->SetupAttachment(RootComponent);
+	}
+	if (!CameraComponent)
+	{
+		CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+		CameraComponent->SetupAttachment(SpringArmComponent);
+	}
+	SpringArmComponent->TargetArmLength = 500;
+	SpringArmComponent->bInheritYaw = false;
+	SpringArmComponent->SetRelativeRotation(FRotator(-20, 0, 0));
+	SpringArmComponent->bDoCollisionTest = false;
+
 }
 
 // Called when the game starts or when spawned

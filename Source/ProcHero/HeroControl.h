@@ -6,6 +6,8 @@
 #include "GameFramework/Pawn.h"
 #include "HeroPart.h"
 #include "Components/InputComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "HeroControl.generated.h"
 
@@ -41,6 +43,18 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	UPROPERTY(VisibleAnywhere)
+		USphereComponent* SphereComponent;
+
+	UPROPERTY(VisibleAnywhere)
+		UStaticMeshComponent* MeshComponent;
+
+	UPROPERTY(VisibleAnywhere)
+		USpringArmComponent* SpringArmComponent;
+
+	UPROPERTY(VisibleAnywhere)
+		UCameraComponent* CameraComponent;
 
 	UPROPERTY(VisibleAnywhere)
 		bool AllPartsValid;

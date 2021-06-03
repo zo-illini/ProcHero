@@ -25,7 +25,10 @@ AHeroPart::AHeroPart()
 		CapsuleComponent->SetupAttachment(RootComponent);
 	}
 
-	CapsuleComponent->SetRelativeScale3D(FVector(0.5, 0.5, 0.5));
+	//CapsuleComponent->SetRelativeScale3D(FVector(0.5, 0.5, 0.5));
+	CapsuleComponent->SetRelativeRotation(FRotator(90, 0, 0));
+	CapsuleComponent->SetCollisionProfileName(TEXT("BlockAll"));
+	CapsuleComponent->UpdateCollisionProfile();
 	MyStatus = Status::Idle;
 
 }
