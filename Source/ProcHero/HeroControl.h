@@ -36,6 +36,8 @@ protected:
 
 	void SnakeMove(float DeltaTime);
 
+	void MoveCameraWithMouse(float DeltaTime);
+
 
 public:	
 	// Called every frame
@@ -55,6 +57,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 		UCameraComponent* CameraComponent;
+
+	UPROPERTY(VisibleAnywhere)
+		APlayerController* PlayerController;
 
 	UPROPERTY(VisibleAnywhere)
 		bool AllPartsValid;
@@ -84,6 +89,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 		bool Possessed;
+
+	UPROPERTY(EditAnywhere)
+		float CameraRotSpeed;
 
 	UPROPERTY(EditAnywhere)
 		bool CanSnakeMove;

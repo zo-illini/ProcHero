@@ -58,7 +58,8 @@ void AHeroControl::BeginPlay()
 
 	//StartMovingAllParts();
 
-	UGameplayStatics::GetPlayerController(GetWorld(), 0)->Possess(this);
+	PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	PlayerController->Possess(this);
 	Possessed = true;
 
 	SnakeMoveDirection = 1;
@@ -92,6 +93,8 @@ void AHeroControl::Tick(float DeltaTime)
 	{
 		SnakeMove(DeltaTime);
 	}
+
+	MoveCameraWithMouse(DeltaTime);
 	
 }
 
@@ -110,7 +113,7 @@ void AHeroControl::InitializeTargetedLocations()
 {
 	// 简单的初始化排成一条长蛇的TargetedLocations
 	FVector Offset = GetActorRotation().Vector() * -60;
-	FVector Target = this->GetActorLocation() + Offset;
+	FVector Target = this->GetActorLocation() + Offset/2;
 	for (int i = 0; i < AllHeroParts.Num(); i++) 
 	{
 		TargetedLocations.Add(Target);
@@ -208,4 +211,13 @@ void AHeroControl::SnakeMove(float DeltaTime)
 	}
 	SnakeMoveTimer += SnakeMoveDirection * DeltaTime;
 	SetActorRotation(CurRot + FRotator(0, SnakeMoveDirection * SnakeMoveSpeed * DeltaTime, 0));
+}
+
+void AHeroControl::MoveCameraWithMouse(float DeltaTime) 
+{
+	float MouseX, MouseY;
+	PlayerController->GetInputMouseDelta(MouseX, MouseY);
+	FRotator CameraRot = SpringArmComponent->GetRelativeRotation() + FRotator(0, MouseX * DeltaTime * CameraRotSpeed, 0);
+	SpringArmComponent->SetRelativeRotation(CameraRot);
+	
 }
