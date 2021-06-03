@@ -77,13 +77,13 @@ public:
 
 	UPROPERTY(EditAnywhere)
 		float ForwardVelocity;
+
 	UPROPERTY(EditAnywhere)
 		float BackwardVelocity;
-	UPROPERTY(EditAnywhere)
-		float TurnVelocity;
 
 	UPROPERTY(VisibleAnywhere)
 		FVector CurrentVelocity;
+
 	UPROPERTY(VisibleAnywhere)
 		float DeltaAngle;
 
@@ -104,6 +104,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 		float SnakeMoveTimer;
+
 	UPROPERTY(EditAnywhere)
 		float SnakeMoveTime;
 

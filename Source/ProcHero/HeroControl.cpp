@@ -53,11 +53,6 @@ void AHeroControl::BeginPlay()
 		AllPartsValid &= (actor != nullptr);
 	}
 
-	InitializeTargetedLocations();
-	InitializeSources();
-
-	//StartMovingAllParts();
-
 	PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	PlayerController->Possess(this);
 	Possessed = true;
@@ -78,33 +73,22 @@ void AHeroControl::Tick(float DeltaTime)
 	}
 	if (Possessed && !IsSnakeMoving) 
 	{
-		float NewYaw, TargetYaw = SpringArmComponent->GetRelativeRotation().Yaw;
+		float TargetYaw = SpringArmComponent->GetRelativeRotation().Yaw;
 		float DeltaYaw = TargetYaw - GetActorRotation().Yaw;
-		if (FMath::Abs(DeltaYaw) > 0.001) 
-		{
-			NewYaw = FMath::FInterpTo(GetActorRotation().Yaw, SpringArmComponent->GetRelativeRotation().Yaw, DeltaTime, TurnVelocity);
-		}
-		else 
-		{
-			NewYaw = TargetYaw;
-			StartSnakeMove(DeltaYaw);
-		}
-		SetActorRotation(FRotator(0, NewYaw, 0));
 
+		if (FMath::Abs(DeltaYaw) < 0.001) 
+		{
+			// 后退时的snakemove要从反向进入
+			StartSnakeMove(CurrentVelocity.X *  DeltaYaw);
+
+		}
+		SetActorRotation(FRotator(0, TargetYaw, 0));
 	}
 
-
-	/*if (Possessed)
-	{
-		FRotator NewRotation = FRotator(0, DeltaAngle, 0) + GetActorRotation();
-		SetActorRotation(NewRotation);
-	}*/
-
-	// Stop snake movement when turning or staying still
-	if (FMath::Abs(DeltaAngle) > 0.01 || CurrentVelocity.Size() == 0) 
+	// Stop snake movement when mouse move(turning) or when not going forward
+	if (FMath::Abs(DeltaAngle) > 0.01 || CurrentVelocity.IsZero()) 
 	{
 		IsSnakeMoving = false;
-		//StopSnakeMovingAtTurn = true;
 	}
 
 	if (CanSnakeMove && IsSnakeMoving) 
@@ -122,8 +106,6 @@ void AHeroControl::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	InputComponent->BindAxis("Move_Forward", this, &AHeroControl::MoveForward);
-	//InputComponent->BindAxis("Move_Backward", this, &AHeroControl::MoveBackward);
-	InputComponent->BindAxis("Move_Side", this, &AHeroControl::MoveSide);
 	InputComponent->BindAction("Transform",  IE_Pressed, this, &AHeroControl::Transform);
 }
 
@@ -172,8 +154,6 @@ void AHeroControl::TryEnableInput()
 
 	if (AllPartsInPlace)
 	{
-		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Number of spline points not equal to 3"));
-
 		UGameplayStatics::GetPlayerController(GetWorld(), 0)->Possess(this);
 		Possessed = true;
 	}
@@ -196,13 +176,10 @@ void AHeroControl::MoveForward(float AxisValue)
 	}
 }
 
-void AHeroControl::MoveSide(float AxisValue) 
-{
-	//DeltaAngle = AxisValue * TurnVelocity;
-}
-
 void AHeroControl::Transform() 
 {
+	InitializeTargetedLocations();
+	InitializeSources();
 	StartMovingAllParts();
 }
 
@@ -212,7 +189,7 @@ void AHeroControl::StartSnakeMove(float direction)
 	SnakeMoveStartAngle = GetActorRotation().Yaw;
 	SnakeMoveTimer = 0;
 	SnakeMoveDirection = FMath::Sign(direction);
-	// Also start snake-moving right when this function is called with direction 0
+	// Also start snake-moving left when this function is called with direction 0
 	if (SnakeMoveDirection == 0)
 		SnakeMoveDirection = 1;
 }
@@ -228,14 +205,6 @@ void AHeroControl::SnakeMove(float DeltaTime)
 	{
 		SnakeMoveDirection = 1;
 	}
-	//else if (FMath::Abs(SnakeMoveTimer) < 0.05)
-	//{
-	//	if (StopSnakeMovingAtTurn) 
-	//	{
-	//		IsSnakeMoving = false;
-	//		StopSnakeMovingAtTurn = false;
-	//	}
-	//}
 	SnakeMoveTimer += SnakeMoveDirection * DeltaTime;
 	SetActorRotation(CurRot + FRotator(0, SnakeMoveDirection * SnakeMoveSpeed * DeltaTime, 0));
 }
