@@ -10,6 +10,7 @@
 #include "Components/SceneComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "HeroPart.generated.h"
 
 
@@ -32,7 +33,6 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	void FollowSource();
 
 	void MoveToTarget(float DeltaTime);
 
@@ -46,7 +46,11 @@ protected:
 
 	void MoveToTargetGravity(float DeltaTime);
 
-	void TryStartFollowing();
+	void EnablePhysicsConstraint();
+
+	//void TryStartFollowing();
+
+	//void FollowSource();
 
 	int MaxSplineSampleNum;
 
@@ -74,6 +78,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 		UCapsuleComponent* CapsuleComponent;
+
+	UPROPERTY(VisibleAnywhere)
+		UPhysicsConstraintComponent* ConstraintComponent;
 
 	UPROPERTY(VisibleAnywhere)
 		bool isValid;
@@ -130,4 +137,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 		float ConstantGravityScale;
+
+
+
 };

@@ -19,16 +19,10 @@ AHeroPart::AHeroPart()
 		SplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("Spline"));
 		SplineComponent->SetupAttachment(RootComponent);
 	}
-	if (!CapsuleComponent) 
+	if (!ConstraintComponent)
 	{
-		CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Capsule"));
-		CapsuleComponent->SetupAttachment(RootComponent);
+		ConstraintComponent = CreateDefaultSubobject<UPhysicsConstraintComponent>(TEXT("PhysicConstrain"));
 	}
-
-	//CapsuleComponent->SetRelativeScale3D(FVector(0.5, 0.5, 0.5));
-	CapsuleComponent->SetRelativeRotation(FRotator(90, 0, 0));
-	CapsuleComponent->SetCollisionProfileName(TEXT("BlockAll"));
-	CapsuleComponent->UpdateCollisionProfile();
 	MyStatus = Status::Idle;
 
 }
@@ -46,9 +40,6 @@ void AHeroPart::BeginPlay()
 	{
 		SplineSamples.Add(FVector(0, 0, 0));
 	}
-
-	// Calculated the constant gravity scale that achieves equilibrium on the boundary
-	//ConstantGravityScale = GravityScale / (ConstantGravityBoundary * ConstantGravityBoundary);
 }
 
 // Called every frame
@@ -61,11 +52,12 @@ void AHeroPart::Tick(float DeltaTime)
 	}
 	else if (MyStatus == Status::Following)
 	{
-		FollowSource();
+		//FollowSource();
 	}
 	else if (MyStatus == Status::WaitToFollow) 
 	{
-		TryStartFollowing();
+		//TryStartFollowing();
+		EnablePhysicsConstraint();
 	}
 }
 
@@ -76,33 +68,20 @@ void AHeroPart::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 }
 
-void AHeroPart::TryStartFollowing() 
+void AHeroPart::EnablePhysicsConstraint() 
 {
-	check(Source);
-	AHeroPart* ptr = Cast<AHeroPart>(Source);
-	if ((ptr && ptr->MyStatus == Status::Following) || ptr == nullptr) //First hero part, source is hero control
+	AHeroPart* SourcePtr = Cast<AHeroPart>(Source);
+	if (SourcePtr == nullptr || (SourcePtr)->MyStatus == Status::Following) 
 	{
-		OriginalDistance = (Source->GetActorLocation() - GetActorLocation()).Size();
+		ConstraintComponent->SetWorldLocation(0.5 * (GetActorLocation() + Source->GetActorLocation()));
+		ConstraintComponent->SetConstrainedComponents(Cast<UPrimitiveComponent>(Source->GetRootComponent()), TEXT("Bone1"), this->SphereComponent, TEXT("Bone2"));
+		ConstraintComponent->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, 20);
+		ConstraintComponent->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Limited, 20);
+		SphereComponent->SetSimulatePhysics(true);
+		//SphereComponent->SetEnableGravity(false);
+		ConstraintComponent->UpdateConstraintFrames();
 		MyStatus = Status::Following;
-		//SphereComponent->SetSimulatePhysics(true);
 	}
-}
-
-void AHeroPart::FollowSource() 
-{
-	check(Source);
-
-	FVector TargetedLocation = Source->GetActorRotation().Vector() * (-OriginalDistance) + Source->GetActorLocation();
-	this->SetActorLocation((FMath::Lerp<FVector, float>(GetActorLocation(), TargetedLocation, DampingTranslationWeight)));
-
-	FRotator TargetedRotation = UKismetMathLibrary::MakeRotFromX((Source->GetActorLocation() - GetActorLocation()).GetSafeNormal());
-
-	// Rotation is not interpolated for now
-	//FRotator MyRotation = GetActorRotation();
-	//TargetedRotation = UKismetMathLibrary::RInterpTo(MyRotation, TargetedRotation, DeltaTime, 10);
-
-
-	this->SetActorRotation(TargetedRotation);
 }
 
 void AHeroPart::SetMoveToTarget(FVector VTarget, FRotator RTarget, int Mode) 
@@ -127,6 +106,7 @@ void AHeroPart::SetMoveToTarget(FVector VTarget, FRotator RTarget, int Mode)
 
 	MyStatus = Status::Transforming;
 
+	SphereComponent->SetCollisionProfileName("OverlapAll");
 	SphereComponent->SetSimulatePhysics(false);
 }
 
@@ -277,3 +257,32 @@ void AHeroPart::MoveToTargetGravity(float DeltaTime)
 	FVector TotalDistance = MoveToTargetLocation - MoveToStartLocation;
 	SetActorRotation(FMath::RInterpTo(MoveToStartRotation, MoveToTargetRotator, 1 - Distance / TotalDistance.Size(), 1));
 }
+
+/*void AHeroPart::TryStartFollowing() 
+{
+	check(Source);
+	AHeroPart* ptr = Cast<AHeroPart>(Source);
+	if ((ptr && ptr->MyStatus == Status::Following) || ptr == nullptr) //First hero part, source is hero control
+	{
+		OriginalDistance = (Source->GetActorLocation() - GetActorLocation()).Size();
+		MyStatus = Status::Following;
+		//SphereComponent->SetSimulatePhysics(true);
+	}
+}
+
+void AHeroPart::FollowSource() 
+{
+	check(Source);
+
+	FVector TargetedLocation = Source->GetActorRotation().Vector() * (-OriginalDistance) + Source->GetActorLocation();
+	this->SetActorLocation((FMath::Lerp<FVector, float>(GetActorLocation(), TargetedLocation, DampingTranslationWeight)));
+
+	FRotator TargetedRotation = UKismetMathLibrary::MakeRotFromX((Source->GetActorLocation() - GetActorLocation()).GetSafeNormal());
+
+	// Rotation is not interpolated for now
+	//FRotator MyRotation = GetActorRotation();
+	//TargetedRotation = UKismetMathLibrary::RInterpTo(MyRotation, TargetedRotation, DeltaTime, 10);
+
+
+	this->SetActorRotation(TargetedRotation);
+}*/
