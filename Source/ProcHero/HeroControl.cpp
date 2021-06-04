@@ -34,10 +34,10 @@ AHeroControl::AHeroControl()
 		CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 		CameraComponent->SetupAttachment(SpringArmComponent);
 	}
-	SpringArmComponent->TargetArmLength = 500;
-	SpringArmComponent->bInheritYaw = false;
+	SpringArmComponent->TargetArmLength = 300;
 	SpringArmComponent->SetRelativeRotation(FRotator(-20, 0, 0));
 	SpringArmComponent->bDoCollisionTest = false;
+	SpringArmComponent->bUsePawnControlRotation = true;
 
 }
 
@@ -55,9 +55,7 @@ void AHeroControl::BeginPlay()
 
 	PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	PlayerController->Possess(this);
-	Possessed = true;
 
-	SnakeMoveDirection = 1;
 }
 
 // Called every frame
@@ -65,38 +63,7 @@ void AHeroControl::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	TryEnableInput();
-
-	if (Possessed && !CurrentVelocity.IsZero()) 
-	{
-		SetActorLocation(GetActorLocation() + CurrentVelocity * DeltaTime);
-	}
-	if (Possessed && !IsSnakeMoving) 
-	{
-		float TargetYaw = SpringArmComponent->GetRelativeRotation().Yaw;
-		float DeltaYaw = TargetYaw - GetActorRotation().Yaw;
-
-		if (FMath::Abs(DeltaYaw) < 0.001) 
-		{
-			// 后退时的snakemove要从反向进入
-			StartSnakeMove(CurrentVelocity.X *  DeltaYaw);
-
-		}
-		SetActorRotation(FRotator(0, TargetYaw, 0));
-	}
-
-	// Stop snake movement when mouse move(turning) or when not going forward
-	if (FMath::Abs(DeltaAngle) > 0.01 || CurrentVelocity.IsZero()) 
-	{
-		IsSnakeMoving = false;
-	}
-
-	if (CanSnakeMove && IsSnakeMoving) 
-	{
-		SnakeMove(DeltaTime);
-	}
-
-	MoveCameraWithMouse(DeltaTime);
+	TryEnablePhysics();
 	
 }
 
@@ -106,6 +73,8 @@ void AHeroControl::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	InputComponent->BindAxis("Move_Forward", this, &AHeroControl::MoveForward);
+	InputComponent->BindAxis("Turn", this, &AHeroControl::MouseTurn);
+	InputComponent->BindAxis("TurnUp", this, &AHeroControl::MouseTurnUp);
 	InputComponent->BindAction("Transform",  IE_Pressed, this, &AHeroControl::Transform);
 }
 
@@ -141,81 +110,53 @@ void AHeroControl::StartMovingAllParts()
 		check(AllHeroParts.Num() == TargetedLocations.Num());
 		for (int i = 0; i < AllHeroParts.Num(); i++)
 		{
-			(Cast<AHeroPart>(AllHeroParts[i]))->SetMoveToTarget(TargetedLocations[i], GetActorRotation(), 1);
+			(Cast<AHeroPart>(AllHeroParts[i]))->SetMoveToTarget(TargetedLocations[i], GetActorRotation(), 2);
 		}
 	}
 }
 
-void AHeroControl::TryEnableInput()
+void AHeroControl::TryEnablePhysics()
 {
 	bool AllPartsInPlace = true;
 	for (AActor* actor : AllHeroParts)
 	{
-		AllPartsInPlace &= Cast<AHeroPart>(actor)->isFollowing;
+		AllPartsInPlace &= (Cast<AHeroPart>(actor)->MyStatus == Status::Following);
 	}
 
 	if (AllPartsInPlace)
 	{
-		UGameplayStatics::GetPlayerController(GetWorld(), 0)->Possess(this);
-		Possessed = true;
+		SphereComponent->SetSimulatePhysics(true);
+		SphereComponent->SetEnableGravity(true);
+		SphereComponent->SetCollisionProfileName("BlockAll");
 	}
 }
 
 void AHeroControl::MoveForward(float AxisValue) 
 {
-	if (AxisValue >= 0) 
+	if (SphereComponent->IsSimulatingPhysics()) 
 	{
-		CurrentVelocity = GetActorRotation().Vector() * AxisValue * ForwardVelocity;
-	}
-	else 
-	{
-		CurrentVelocity = GetActorRotation().Vector() * AxisValue * BackwardVelocity;
-	}
-
-	if (AxisValue == 0) 
-	{
-		IsSnakeMoving = false;
+		if (AxisValue > 0) 
+		{
+			SphereComponent->AddForce(FVector::VectorPlaneProject(CameraComponent->GetForwardVector(), FVector(0, 0, 1)).GetSafeNormal() * ForwardForce, NAME_None, true);
+			//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Force Applied"));
+		}
 	}
 }
+
+void AHeroControl::MouseTurn(float AxisValue) 
+{
+	AddControllerYawInput(AxisValue);
+}
+
+void AHeroControl::MouseTurnUp(float AxisValue)
+{
+	AddControllerPitchInput(AxisValue);
+}
+
 
 void AHeroControl::Transform() 
 {
 	InitializeTargetedLocations();
 	InitializeSources();
 	StartMovingAllParts();
-}
-
-void AHeroControl::StartSnakeMove(float direction) 
-{
-	IsSnakeMoving = true;
-	SnakeMoveStartAngle = GetActorRotation().Yaw;
-	SnakeMoveTimer = 0;
-	SnakeMoveDirection = FMath::Sign(direction);
-	// Also start snake-moving left when this function is called with direction 0
-	if (SnakeMoveDirection == 0)
-		SnakeMoveDirection = 1;
-}
-
-void AHeroControl::SnakeMove(float DeltaTime) 
-{
-	FRotator CurRot = GetActorRotation();
-	if (SnakeMoveTimer > SnakeMoveTime)
-	{
-		SnakeMoveDirection = -1;
-	}
-	else if (SnakeMoveTimer < -SnakeMoveTime)
-	{
-		SnakeMoveDirection = 1;
-	}
-	SnakeMoveTimer += SnakeMoveDirection * DeltaTime;
-	SetActorRotation(CurRot + FRotator(0, SnakeMoveDirection * SnakeMoveSpeed * DeltaTime, 0));
-}
-
-void AHeroControl::MoveCameraWithMouse(float DeltaTime) 
-{
-	float MouseX, MouseY;
-	PlayerController->GetInputMouseDelta(MouseX, MouseY);
-	FRotator CameraRot = SpringArmComponent->GetRelativeRotation() + FRotator(0, MouseX * DeltaTime * CameraRotSpeed, 0);
-	SpringArmComponent->SetRelativeRotation(CameraRot);
-	DeltaAngle = MouseX * DeltaTime;
 }

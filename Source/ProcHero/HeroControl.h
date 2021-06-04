@@ -30,13 +30,7 @@ protected:
 
 	void StartMovingAllParts();
 
-	void TryEnableInput();
-
-	void StartSnakeMove(float direction);
-
-	void SnakeMove(float DeltaTime);
-
-	void MoveCameraWithMouse(float DeltaTime);
+	void TryEnablePhysics();
 
 
 public:	
@@ -70,54 +64,16 @@ public:
 	UPROPERTY(EditAnywhere)
 		TArray<FVector> TargetedLocations;
 
+	UPROPERTY(EditAnywhere)
+		float ForwardForce;
+
+
 	void MoveForward(float AxisValue);
 	void MoveBackward(float AxisValue);
 	void MoveSide(float AxisValue);
+	void MouseTurn(float AxisValue);
+	void MouseTurnUp(float AxisValue);
 	void Transform();
 
-	UPROPERTY(EditAnywhere)
-		float ForwardVelocity;
-
-	UPROPERTY(EditAnywhere)
-		float BackwardVelocity;
-
-	UPROPERTY(VisibleAnywhere)
-		FVector CurrentVelocity;
-
-	UPROPERTY(VisibleAnywhere)
-		float DeltaAngle;
-
-	UPROPERTY(VisibleAnywhere)
-		bool Possessed;
-
-	UPROPERTY(EditAnywhere)
-		float CameraRotSpeed;
-
-	UPROPERTY(EditAnywhere)
-		bool CanSnakeMove;
-
-	UPROPERTY(EditAnywhere)
-		bool IsSnakeMoving;
-	
-	UPROPERTY(EditAnywhere)
-		bool StopSnakeMovingAtTurn;
-
-	UPROPERTY(VisibleAnywhere)
-		float SnakeMoveTimer;
-
-	UPROPERTY(EditAnywhere)
-		float SnakeMoveTime;
-
-	UPROPERTY(EditAnywhere)
-		float SnakeMoveAngle;
-
-	UPROPERTY(VisibleAnywhere)
-		float SnakeMoveStartAngle;
-
-	UPROPERTY(VisibleAnywhere)
-		int SnakeMoveDirection;
-
-	UPROPERTY(EditAnywhere)
-		float SnakeMoveSpeed;
 
 };

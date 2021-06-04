@@ -53,6 +53,9 @@ void AHeroPart::Tick(float DeltaTime)
 	else if (MyStatus == Status::Following)
 	{
 		//FollowSource();
+		SphereComponent->SetSimulatePhysics(true);
+		SphereComponent->SetEnableGravity(true);
+		SphereComponent->SetCollisionProfileName("BlockAll");
 	}
 	else if (MyStatus == Status::WaitToFollow) 
 	{
@@ -77,8 +80,7 @@ void AHeroPart::EnablePhysicsConstraint()
 		ConstraintComponent->SetConstrainedComponents(Cast<UPrimitiveComponent>(Source->GetRootComponent()), TEXT("Bone1"), this->SphereComponent, TEXT("Bone2"));
 		ConstraintComponent->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, 20);
 		ConstraintComponent->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Limited, 20);
-		SphereComponent->SetSimulatePhysics(true);
-		//SphereComponent->SetEnableGravity(false);
+		
 		ConstraintComponent->UpdateConstraintFrames();
 		MyStatus = Status::Following;
 	}
