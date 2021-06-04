@@ -9,6 +9,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Engine/World.h"
 #include "HeroControl.generated.h"
 
 UCLASS()
@@ -31,6 +32,8 @@ protected:
 	void StartMovingAllParts();
 
 	void TryEnablePhysics();
+
+	void FindWall();
 
 
 public:	
@@ -66,6 +69,12 @@ public:
 
 	UPROPERTY(EditAnywhere)
 		float ForwardForce;
+
+	UPROPERTY(VisibleAnywhere)
+		FVector ForwardDirection;
+
+	UPROPERTY(VisibleAnywhere)
+		bool IsOnWall;
 
 
 	void MoveForward(float AxisValue);

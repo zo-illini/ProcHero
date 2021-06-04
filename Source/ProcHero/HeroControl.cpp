@@ -64,6 +64,8 @@ void AHeroControl::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	TryEnablePhysics();
+
+	FindWall();
 	
 }
 
@@ -131,13 +133,40 @@ void AHeroControl::TryEnablePhysics()
 	}
 }
 
+void AHeroControl::FindWall() 
+{
+	FHitResult Out;
+	FVector CameraDirection = CameraComponent->GetForwardVector().GetSafeNormal();
+	FVector Head = GetActorLocation();
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+	FCollisionResponseParams ResponseParams;
+	if (GetWorld()->LineTraceSingleByChannel(Out, Head, Head + CameraDirection * (SphereComponent->GetUnscaledSphereRadius() + 10), ECollisionChannel::ECC_WorldStatic, Params, ResponseParams)) 
+	{
+		IsOnWall = true;
+		ForwardDirection = FVector(0, 0, 1);
+		//ForwardDirection = FVector::VectorPlaneProject(CameraDirection, Out.Normal);
+		//ForwardDirection.Z = FMath::Abs(ForwardDirection.Z);
+	}
+	else 
+	{
+		//ForwardDirection = FVector::VectorPlaneProject(CameraDirection, FVector(0, 0, 1));
+		ForwardDirection = CameraDirection;
+	}
+	ForwardDirection.Z = FMath::Clamp<float>(ForwardDirection.Z, 0, ForwardDirection.Z);
+
+
+	
+}
+
 void AHeroControl::MoveForward(float AxisValue) 
 {
 	if (SphereComponent->IsSimulatingPhysics()) 
 	{
 		if (AxisValue > 0) 
 		{
-			SphereComponent->AddForce(FVector::VectorPlaneProject(CameraComponent->GetForwardVector(), FVector(0, 0, 1)).GetSafeNormal() * ForwardForce, NAME_None, true);
+			SphereComponent->AddForce(ForwardDirection.GetSafeNormal() * ForwardForce, NAME_None, true);
+			//SphereComponent->AddForce(FVector::VectorPlaneProject(CameraComponent->GetForwardVector(), FVector(0, 0, 1)).GetSafeNormal() * ForwardForce, NAME_None, true);
 			//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Force Applied"));
 		}
 	}
