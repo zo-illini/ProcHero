@@ -70,11 +70,19 @@ public:
 	UPROPERTY(EditAnywhere)
 		float ForwardForce;
 
+	UPROPERTY(EditAnywhere)
+		float UpwardForce;
+
+	UPROPERTY(EditAnywhere)
+		float UpwardImpulse;
+
 	UPROPERTY(VisibleAnywhere)
 		FVector ForwardDirection;
 
 	UPROPERTY(VisibleAnywhere)
 		bool IsOnWall;
+	UPROPERTY(VisibleAnywhere)
+		bool HasTransformed;
 
 
 	void MoveForward(float AxisValue);

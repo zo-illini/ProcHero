@@ -55,7 +55,7 @@ void AHeroControl::BeginPlay()
 
 	PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	PlayerController->Possess(this);
-
+	HasTransformed = false;
 }
 
 // Called every frame
@@ -137,23 +137,14 @@ void AHeroControl::FindWall()
 {
 	FHitResult Out;
 	FVector CameraDirection = CameraComponent->GetForwardVector().GetSafeNormal();
+	FVector CamDirWithPositiveZ = CameraDirection;
+	CamDirWithPositiveZ.Z = FMath::Clamp<float>(CamDirWithPositiveZ.Z, 0, FMath::Abs(CamDirWithPositiveZ.Z));
 	FVector Head = GetActorLocation();
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
 	FCollisionResponseParams ResponseParams;
-	if (GetWorld()->LineTraceSingleByChannel(Out, Head, Head + CameraDirection * (SphereComponent->GetUnscaledSphereRadius() + 10), ECollisionChannel::ECC_WorldStatic, Params, ResponseParams)) 
-	{
-		IsOnWall = true;
-		ForwardDirection = FVector(0, 0, 1);
-		//ForwardDirection = FVector::VectorPlaneProject(CameraDirection, Out.Normal);
-		//ForwardDirection.Z = FMath::Abs(ForwardDirection.Z);
-	}
-	else 
-	{
-		//ForwardDirection = FVector::VectorPlaneProject(CameraDirection, FVector(0, 0, 1));
-		ForwardDirection = CameraDirection;
-	}
-	ForwardDirection.Z = FMath::Clamp<float>(ForwardDirection.Z, 0, ForwardDirection.Z);
+	IsOnWall = GetWorld()->LineTraceSingleByChannel(Out, Head, Head + CamDirWithPositiveZ * (SphereComponent->GetUnscaledSphereRadius() + 10), ECollisionChannel::ECC_WorldStatic, Params, ResponseParams);
+	ForwardDirection = FVector::VectorPlaneProject(CameraDirection, FVector(0, 0, 1));
 
 
 	
@@ -165,7 +156,16 @@ void AHeroControl::MoveForward(float AxisValue)
 	{
 		if (AxisValue > 0) 
 		{
-			SphereComponent->AddForce(ForwardDirection.GetSafeNormal() * ForwardForce, NAME_None, true);
+			if (IsOnWall) 
+			{
+				//SphereComponent->AddImpulse(FVector::UpVector * UpwardImpulse, NAME_None, true);
+				SphereComponent->AddForce(FVector::UpVector * UpwardForce, NAME_None, true);
+			}
+			else 
+			{
+				SphereComponent->AddForce(ForwardDirection.GetSafeNormal() * ForwardForce, NAME_None, true);
+
+			}
 			//SphereComponent->AddForce(FVector::VectorPlaneProject(CameraComponent->GetForwardVector(), FVector(0, 0, 1)).GetSafeNormal() * ForwardForce, NAME_None, true);
 			//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Force Applied"));
 		}
@@ -185,7 +185,12 @@ void AHeroControl::MouseTurnUp(float AxisValue)
 
 void AHeroControl::Transform() 
 {
-	InitializeTargetedLocations();
-	InitializeSources();
-	StartMovingAllParts();
+	if (!HasTransformed) 
+	{
+		InitializeTargetedLocations();
+		InitializeSources();
+		StartMovingAllParts();
+		HasTransformed = true;
+	}
+	
 }

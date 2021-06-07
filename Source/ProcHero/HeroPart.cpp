@@ -55,7 +55,9 @@ void AHeroPart::Tick(float DeltaTime)
 		//FollowSource();
 		SphereComponent->SetSimulatePhysics(true);
 		SphereComponent->SetEnableGravity(true);
+		//SphereComponent->SetMassOverrideInKg(NAME_None, 10, true);
 		SphereComponent->SetCollisionProfileName("BlockAll");
+
 	}
 	else if (MyStatus == Status::WaitToFollow) 
 	{
