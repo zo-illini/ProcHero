@@ -82,6 +82,12 @@ void AHeroPart::EnablePhysicsConstraint()
 		ConstraintComponent->SetConstrainedComponents(Cast<UPrimitiveComponent>(Source->GetRootComponent()), TEXT("Bone1"), this->SphereComponent, TEXT("Bone2"));
 		ConstraintComponent->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, 20);
 		ConstraintComponent->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Limited, 20);
+		//避免第一节身体翘起
+		if (SourcePtr == nullptr) 
+		{
+			ConstraintComponent->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, 0);
+			ConstraintComponent->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Limited, 0);
+		}
 		
 		ConstraintComponent->UpdateConstraintFrames();
 		MyStatus = Status::Following;
